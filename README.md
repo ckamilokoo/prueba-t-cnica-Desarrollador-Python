@@ -146,6 +146,5 @@ Endpoints sugeridos:
 │ └── modelo_ventas.joblib
 ├── backend/ (opcional)
 │ ├── main.py
-│ └── templates/
-│ └── index.html
+│ └── templates/index.html
 └── README.md
