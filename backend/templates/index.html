@@ -1,0 +1,172 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <title>Predicción de Ventas y Gráficos</title>
+  <style>
+    body {
+      font-family: 'Segoe UI', sans-serif;
+      background-color: #f5f8fa;
+      max-width: 1000px;
+      margin: 30px auto;
+      padding: 20px;
+      color: #333;
+    }
+
+    h1, h2 {
+      color: #1a73e8;
+      text-align: center;
+      margin-bottom: 20px;
+    }
+
+    form {
+      display: flex;
+      justify-content: center;
+      gap: 10px;
+      margin-bottom: 30px;
+    }
+
+    select, button {
+      padding: 10px;
+      font-size: 1rem;
+      border-radius: 5px;
+      border: 1px solid #ccc;
+    }
+
+    button {
+      background-color: #1a73e8;
+      color: white;
+      cursor: pointer;
+      border: none;
+      transition: background-color 0.3s ease;
+    }
+
+    button:hover {
+      background-color: #155ab6;
+    }
+
+    #resultado {
+      text-align: center;
+      margin-top: 15px;
+      font-size: 1.2rem;
+      font-weight: bold;
+    }
+
+    .graficos-container {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 20px;
+      margin-top: 30px;
+      justify-content: center;
+    }
+
+    .grafico {
+      flex: 1 1 300px;
+      max-width: 320px;
+      border: 1px solid #ddd;
+      padding: 10px;
+      border-radius: 8px;
+      background: white;
+      box-shadow: 0 2px 6px rgba(0,0,0,0.05);
+      text-align: center;
+    }
+
+    .grafico img {
+      max-width: 100%;
+      height: auto;
+      border-radius: 4px;
+    }
+  </style>
+</head>
+<body>
+
+  <h1>Consulta de Ventas Proyectadas</h1>
+
+  <form id="formulario">
+    <label for="anio">Año:</label>
+    <select id="anio" name="anio" required>
+      <option value="2028">2028</option>
+      <option value="2029" selected>2029</option>
+    </select>
+    <button type="submit">Predecir</button>
+  </form>
+
+  <div id="resultado"></div>
+
+  <h2>Gráfico de Predicción</h2>
+  <div class="grafico">
+    <img id="grafico_prediccion" src="" alt="Gráfico Predicción" style="display:none;" />
+  </div>
+
+  <h2>Ventas Totales por Año</h2>
+  <div class="grafico">
+    <img src="/static/ventas_totales.png" alt="Ventas Totales por Año" />
+  </div>
+
+  <h2>Top 5 Productos por Año</h2>
+  <div class="graficos-container" id="top5-historico">
+    <div class="grafico">
+      <p>Top 5 - 2022</p>
+      <img src="/static/top5_2022.png" alt="Top 5 2022" />
+    </div>
+    <div class="grafico">
+      <p>Top 5 - 2023</p>
+      <img src="/static/top5_2023.png" alt="Top 5 2023" />
+    </div>
+    <div class="grafico">
+      <p>Top 5 - 2024</p>
+      <img src="/static/top5_2024.png" alt="Top 5 2024" />
+    </div>
+  </div>
+  <h2>Distribución de Stock (Top 5 Tiendas)</h2>
+<div class="grafico">
+  <pre id="stock_info" style="text-align:left; white-space:pre-wrap; font-family:monospace;"></pre>
+</div>
+
+
+  <script>
+  const form = document.getElementById('formulario');
+  const resultadoDiv = document.getElementById('resultado');
+  const graficoImg = document.getElementById('grafico_prediccion');
+  const stockDiv = document.getElementById('stock_info');
+
+  form.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    resultadoDiv.textContent = 'Calculando...';
+    graficoImg.style.display = 'none';
+    stockDiv.textContent = 'Cargando stock...';
+
+    const anio = document.getElementById('anio').value;
+
+    try {
+      // Predicción
+      const response = await fetch(`/predict/ventas?anio=${anio}`);
+      if (!response.ok) throw new Error('Error en la predicción');
+
+      const data = await response.json();
+      resultadoDiv.textContent = `Ventas estimadas para ${data.anio}: $${data.ventas_estimadas.toLocaleString()}`;
+      graficoImg.src = `/static/prediccion_${anio}.png`;
+      graficoImg.style.display = 'block';
+
+      // Stock recomendado
+      const stockResponse = await fetch(`/stock/recomendado?anio=${anio}`);
+      if (!stockResponse.ok) throw new Error('Error al cargar stock');
+
+      const stockData = await stockResponse.json();
+      let stockTexto = `Productos válidos: ${stockData.productos_validos.join(", ")}\n\nDistribución:\n`;
+      for (const [tienda, cantidad] of Object.entries(stockData.stock_top5_tiendas)) {
+        stockTexto += `${tienda}: ${cantidad} unidades\n`;
+      }
+
+      stockDiv.textContent = stockTexto;
+
+    } catch (error) {
+      resultadoDiv.textContent = `Error: ${error.message}`;
+      stockDiv.textContent = 'No se pudo obtener el stock.';
+    }
+  });
+</script>
+
+
+</body>
+</html>
